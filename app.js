@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const port = 3000; // Puedes cambiar el puerto según tus preferencias
+const port = 3000; //
 
 
 // Importa la clase ProductManager
