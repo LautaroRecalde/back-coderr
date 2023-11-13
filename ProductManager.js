@@ -77,36 +77,18 @@ class ProductManager {
 const productManager = new ProductManager('productos.json');
 
 try {
-  productManager.addProduct({
-    title: "Producto 1",
-    description: "Descripción del Producto 1",
-    price: 19.99,
-    thumbnail: "imagen1.jpg",
-    code: "P1",
-    stock: 10
-  });
+  const productToUpdate = productManager.getProductById(1);
 
-  productManager.addProduct({
-    title: "Producto 2",
-    description: "Descripción del Producto 2",
-    price: 29.99,
-    thumbnail: "imagen2.jpg",
-    code: "P2",
-    stock: 5
-  });
-
-  const allProducts = productManager.getProducts();
-  console.log(allProducts);
-
-  const product = productManager.getProductById(1);
-  console.log(product);
-
-  productManager.updateProduct(1, { price: 29.99, stock: 15 });
-  productManager.deleteProduct(2);
+  if (productToUpdate) {
+    productManager.updateProduct(1, { price: 29.99, stock: 15 });
+  } else {
+    console.error('Test failed: Product with ID 1 not found');
+  }
 
   const updatedProduct = productManager.getProductById(1);
   console.log(updatedProduct);
 } catch (error) {
   console.error(error.message);
 }
+
 module.exports = ProductManager;
