@@ -1,72 +1,55 @@
-// routes/products.js
 const express = require('express');
 const router = express.Router();
-const ProductManager = require('../ProductManager');
-
-const productManager = new ProductManager('productos.json');
+const Product = require('../dao/models/productModel');
 
 router.get('/', async (req, res) => {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
-    const products = await productManager.getProducts();
+    const { limit = 10, page = 1, sort, query } = req.query;
+    const skip = (page - 1) * limit;
 
-    if (limit) {
-      res.json(products.slice(0, limit));
-    } else {
-      res.json(products);
+    const filter = {};
+    if (query) {
+      // Agrega lógica para filtrar por categoría o disponibilidad, por ejemplo:
+      // filter.category = query;
+      // filter.availability = true;
     }
+
+    const sortOrder = sort === 'desc' ? -1 : 1;
+    const sortOptions = {};
+    if (sort) {
+      sortOptions.price = sortOrder; // Ordena por precio ascendente o descendente
+    }
+
+    const products = await Product.find(filter)
+      .sort(sortOptions)
+      .limit(parseInt(limit))
+      .skip(skip);
+
+    const totalProducts = await Product.countDocuments(filter);
+    const totalPages = Math.ceil(totalProducts / limit);
+
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    const nextPage = hasNextPage ? `/api/products?page=${parseInt(page) + 1}&limit=${limit}&sort=${sort}&query=${query}` : null;
+    const prevPage = hasPrevPage ? `/api/products?page=${parseInt(page) - 1}&limit=${limit}&sort=${sort}&query=${query}` : null;
+
+    res.json({
+      status: 'success',
+      payload: products,
+      totalPages,
+      prevPage,
+      nextPage,
+      page: parseInt(page),
+      hasNextPage,
+      hasPrevPage,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-router.get('/:pid', async (req, res) => {
-  const productId = parseInt(req.params.pid);
+// Otros endpoints para crear, actualizar y eliminar productos van aquí...
 
-  try {
-    const product = await productManager.getProductById(productId);
-    res.json(product);
-  } catch (error) {
-    console.error(error);
-    res.status(404).json({ error: 'Product not found' });
-  }
-});
-
-router.post('/', (req, res) => {
-  try {
-    const newProduct = req.body;
-    productManager.addProduct(newProduct);
-    res.json({ message: 'Product added successfully' });
-  } catch (error) {
-    console.error(error.message);
-    res.status(400).json({ error: error.message });
-  }
-});
-
-router.put('/:pid', (req, res) => {
-  const productId = parseInt(req.params.pid);
-
-  try {
-    const updatedProduct = req.body;
-    productManager.updateProduct(productId, updatedProduct);
-    res.json({ message: 'Product updated successfully' });
-  } catch (error) {
-    console.error(error.message);
-    res.status(404).json({ error: error.message });
-  }
-});
-
-router.delete('/:pid', (req, res) => {
-  const productId = parseInt(req.params.pid);
-
-  try {
-    productManager.deleteProduct(productId);
-    res.json({ message: 'Product deleted successfully' });
-  } catch (error) {
-    console.error(error.message);
-    res.status(404).json({ error: error.message });
-  }
-});
-
-module.exports = router;
+module.exports = router

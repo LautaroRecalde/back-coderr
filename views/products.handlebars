@@ -1,0 +1,14 @@
+<!-- views/products.handlebars -->
+
+<h1>Lista de Productos</h1>
+
+<ul>
+  {{#each products}}
+    <li>{{this.title}} - {{this.price}}</li>
+    <!-- Mostrar otros detalles del producto según sea necesario -->
+  {{/each}}
+</ul>
+
+{{#if hasNextPage}}
+  <a href="/api/products?page={{nextPage}}">Next Page</a>
+{{/if}}
