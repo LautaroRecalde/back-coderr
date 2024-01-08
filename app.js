@@ -1,74 +1,38 @@
 const express = require('express');
-const http = require('http');
-const socketIO = require('socket.io');
 const exphbs = require('express-handlebars');
 const path = require('path');
+const session = require('express-session');
+const { loginUser } = require('./authController'); // Importa la función de autenticación
+const User = require('./models/user'); // Importa el modelo de usuario
 
 const app = express();
-const server = http.createServer(app);
-const io = socketIO(server);
 
-const ProductManager = require('./ProductManager');
-const CartManager = require('./CartManager');
-
-const productsRouter = require('./routes/products');
-const cartsRouter = require('./routes/carts');
-
-const productManager = new ProductManager('productos.json');
-const cartManager = new CartManager('carrito.json');
-
-app.use(express.json());
-
-// Rutas para productos
-app.use('/api/products', productsRouter);
-
-// Rutas para carritos
-app.use('/api/carts', cartsRouter);
-
-// Configurar Handlebars
+// Configuración de Handlebars
 app.engine('handlebars', exphbs());
 app.set('view engine', 'handlebars');
 app.set('views', path.join(__dirname, 'views'));
 
-// Configurar Socket.io para la actualización en tiempo real
-io.on('connection', (socket) => {
-  console.log('Usuario conectado');
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-  // Emitir la lista de productos a la conexión recién establecida
-  socket.emit('updateProducts', productManager.getProducts());
+// Configuración de la sesión
+app.use(session({
+  secret: 'mi-secreto', // Cambia esto a una cadena segura en producción
+  resave: false,
+  saveUninitialized: false,
+}));
 
-  // Manejar eventos de creación y eliminación de productos
-  socket.on('createProduct', (newProduct) => {
-    try {
-      productManager.addProduct(newProduct);
-      const updatedProducts = productManager.getProducts();
-      io.emit('updateProducts', updatedProducts);
-    } catch (error) {
-      console.error(error.message);
-    }
-  });
-
-  socket.on('deleteProduct', (productId) => {
-    try {
-      productManager.deleteProduct(productId);
-      const updatedProducts = productManager.getProducts();
-      io.emit('updateProducts', updatedProducts);
-    } catch (error) {
-      console.error(error.message);
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Usuario desconectado');
-  });
+// Rutas para la página de inicio de sesión y manejo del inicio de sesión
+app.get('/login', (req, res) => {
+  res.render('login');
 });
 
-// Ruta para la vista en tiempo real
-app.get('/realtimeproducts', (req, res) => {
-  res.render('realTimeProducts');
-});
+// Utiliza la función loginUser del authController para el inicio de sesión
+app.post('/login', loginUser);
+
+// ... Resto de tus rutas existentes ...
 
 const port = 8080;
-server.listen(port, () => {
+app.listen(port, () => {
   console.log(`Servidor Express escuchando en el puerto ${port}`);
 });
