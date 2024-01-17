@@ -2,8 +2,10 @@ const express = require('express');
 const exphbs = require('express-handlebars');
 const path = require('path');
 const session = require('express-session');
-const { loginUser } = require('./authController'); // Importa la función de autenticación
-const User = require('./models/user'); // Importa el modelo de usuario
+const passport = require('passport');
+require('./passport-config')(passport); 
+const { loginUser } = require('./authController'); 
+const User = require('./models/Users');
 
 const app = express();
 
@@ -17,20 +19,23 @@ app.use(express.json());
 
 // Configuración de la sesión
 app.use(session({
-  secret: 'mi-secreto', // Cambia esto a una cadena segura en producción
+  secret: 'mi-secreto', 
   resave: false,
   saveUninitialized: false,
 }));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Rutas para la página de inicio de sesión y manejo del inicio de sesión
 app.get('/login', (req, res) => {
   res.render('login');
 });
 
-// Utiliza la función loginUser del authController para el inicio de sesión
+
 app.post('/login', loginUser);
 
-// ... Resto de tus rutas existentes ...
+
 
 const port = 8080;
 app.listen(port, () => {
