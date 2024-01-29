@@ -1,51 +1,48 @@
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-const JWTstrategy = require('passport-jwt').Strategy;
-const ExtractJWT = require('passport-jwt').ExtractJwt;
-const User = require('./path_to_your_user_model');
+const JwtStrategy = require('passport-jwt').Strategy;
+const { ExtractJwt } = require('passport-jwt');
+const User = require('./models/User');
 
-passport.use('signup', new LocalStrategy({
+// Configurar la estrategia local para el login
+passport.use(new LocalStrategy({
   usernameField: 'email',
-  passwordField: 'password'
-}, async (email, password, done) => {
-  try {
-    const user = await User.create({ email, password });
-    return done(null, user);
-  } catch (error) {
-    done(error);
-  }
-}));
-
-passport.use('login', new LocalStrategy({
-  usernameField: 'email',
-  passwordField: 'password'
 }, async (email, password, done) => {
   try {
     const user = await User.findOne({ email });
+
     if (!user) {
       return done(null, false, { message: 'Usuario no encontrado' });
     }
 
-    const validate = await bcrypt.compare(password, user.password);
-    if (!validate) {
+    const match = await bcrypt.compare(password, user.password);
+
+    if (match) {
+      return done(null, user);
+    } else {
       return done(null, false, { message: 'Contraseña incorrecta' });
     }
-
-    return done(null, user, { message: 'Login exitoso' });
   } catch (error) {
     return done(error);
   }
 }));
 
+// Configurar la estrategia JWT
 const jwtOptions = {
-  jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
-  secretOrKey: 'your_jwt_secret'
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: 'tu_secreto_jwt', // Cambia esto a una cadena segura en producción
 };
 
-passport.use('jwt', new JWTstrategy(jwtOptions, async (token, done) => {
+passport.use(new JwtStrategy(jwtOptions, async (payload, done) => {
   try {
-    return done(null, token.user);
+    const user = await User.findById(payload.id);
+
+    if (user) {
+      return done(null, user);
+    } else {
+      return done(null, false);
+    }
   } catch (error) {
-    done(error);
+    return done(error);
   }
 }));

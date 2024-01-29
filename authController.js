@@ -1,3 +1,26 @@
+
+const passport = require('passport');
+
+async function loginUser(req, res, next) {
+  passport.authenticate('local', (err, user, info) => {
+    if (err) {
+      return next(err);
+    }
+
+    if (!user) {
+      return res.render('login', { error: info.message });
+    }
+
+    req.logIn(user, (err) => {
+      if (err) {
+        return next(err);
+      }
+
+      return res.redirect('/products');
+    });
+  })(req, res, next);
+}
+
 const bcrypt = require('bcrypt');
 const User = require('./models/Users');
 
