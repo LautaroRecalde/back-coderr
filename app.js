@@ -4,8 +4,9 @@ const path = require('path');
 const session = require('express-session');
 const passport = require('passport');
 const authRoutes = require('./authRoutes');
-require('./passport-config')(passport);
+const initializePassport = require('./passport-config'); 
 const mongoose = require('mongoose');
+const { loginUser } = require('./authController'); 
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use(session({
 }));
 
 // Configuración de Passport y uso de las rutas
+initializePassport(passport); // Inicializa passport
 app.use(passport.initialize());
 app.use(passport.session());
 app.use('/api/sessions', authRoutes);
@@ -48,8 +50,6 @@ app.get('/login', (req, res) => {
 
 // Utiliza la función loginUser del authController para el inicio de sesión
 app.post('/login', loginUser);
-
-
 
 const port = 8080;
 app.listen(port, () => {
